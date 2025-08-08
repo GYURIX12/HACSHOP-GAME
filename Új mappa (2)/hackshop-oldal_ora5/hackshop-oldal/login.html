@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="hu">
+<head>
+  <meta charset="UTF-8">
+  <title>Bejelentkezés</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="container">
+    <h1>Bejelentkezés</h1>
+    <input type="text" id="username" placeholder="Felhasználónév"><br><br>
+    <input type="password" id="password" placeholder="Jelszó"><br><br>
+    <button onclick="login()">Belépés</button>
+    <p id="msg"></p>
+  </div>
+  <script>
+    function login() {
+      const user = document.getElementById("username").value;
+      const pass = document.getElementById("password").value;
+      if (user === "gyurix12" && pass === "titkos") {
+        localStorage.setItem("loggedIn", "true");
+        localStorage.setItem("coins", "100");
+        window.location.href = "piac.html";
+      } else {
+        document.getElementById("msg").innerText = "Hibás belépés!";
+      }
+    }
+  </script>
+</body>
+</html>

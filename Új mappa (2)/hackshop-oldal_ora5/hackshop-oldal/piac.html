@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="hu">
+<head>
+  <meta charset="UTF-8">
+  <title>Hacker Piac</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="container">
+    <h1>Hacker Piac</h1>
+    <p>Egyenleg: <span id="coins">0</span> 💰</p>
+    <div id="marketItems"></div>
+    <hr>
+    <h2>Adj el valamit:</h2>
+    <input type="text" id="itemName" placeholder="Termék neve"><br><br>
+    <textarea id="itemDesc" placeholder="Leírás..." rows="4"></textarea><br><br>
+    <button onclick="addItem()">Feltöltés</button><br><br>
+    <a href="index.html">Vissza</a>
+  </div>
+
+  <script>
+    if (localStorage.getItem("loggedIn") !== "true") {
+      window.location.href = "login.html";
+    }
+
+    let coins = parseInt(localStorage.getItem("coins")) || 0;
+    document.getElementById("coins").innerText = coins;
+
+    const items = [
+      { name: "Jelszótörő script", desc: "Egyszerű brute force Python script.", price: 20 },
+      { name: "Caesar-kód sablon", desc: "HTML + JS sablon Caesar titkosításhoz.", price: 15 }
+    ];
+
+    function displayItems() {
+      const container = document.getElementById("marketItems");
+      container.innerHTML = "";
+      items.forEach((item, index) => {
+        container.innerHTML += `<div class='item'><h3>${item.name}</h3><p>${item.desc}</p><p>Ár: ${item.price} 💰</p>
+        <button onclick="buyItem(${index})">Vásárlás</button></div>`;
+      });
+    }
+
+    function addItem() {
+      const name = document.getElementById("itemName").value;
+      const desc = document.getElementById("itemDesc").value;
+      if (name && desc) {
+        items.push({ name, desc, price: 10 });
+        displayItems();
+        document.getElementById("itemName").value = "";
+        document.getElementById("itemDesc").value = "";
+      }
+    }
+
+    function buyItem(index) {
+      const price = items[index].price;
+      if (coins >= price) {
+        coins -= price;
+        localStorage.setItem("coins", coins);
+        document.getElementById("coins").innerText = coins;
+        alert("Sikeres vásárlás: " + items[index].name);
+      } else {
+        alert("Nincs elég pénzed!");
+      }
+    }
+
+    window.onload = displayItems;
+  </script>
+</body>
+</html>
