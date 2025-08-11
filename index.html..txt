@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html lang="hu">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>HackShop - Gyurix_12 admin</title>
+<style>
+  :root{--bg:#0a0f1a;--panel:#07203a;--accent:#00bfff;--muted:#cfefff}
+  body{margin:0;font-family:Inter,ui-sans-serif,system-ui,Segoe UI,Roboto,"Helvetica Neue",Arial;background:linear-gradient(135deg,var(--bg),#001f3f);color:var(--muted)}
+  header{padding:18px;text-align:center;background:rgba(0,0,0,0.12)}
+  .wrap{max-width:980px;margin:28px auto;padding:18px;background:rgba(0,0,0,0.18);border-radius:10px;border:1px solid rgba(0,191,255,0.06)}
+  nav{display:flex;gap:8px;flex-wrap:wrap;justify-content:center;margin-bottom:12px}
+  button, input[type=button]{background:var(--panel);color:var(--accent);border:1px solid rgba(0,191,255,0.12);padding:8px 12px;border-radius:6px;cursor:pointer}
+  button:hover{filter:brightness(1.05)}
+  .toplink{position:fixed;right:18px;bottom:18px;background:#004b7a;color:white;padding:10px;border-radius:8px;text-decoration:none}
+  .grid{display:grid;grid-template-columns:1fr 360px;gap:18px}
+  .card{background:linear-gradient(180deg,rgba(255,255,255,0.02),rgba(0,0,0,0.12));padding:14px;border-radius:8px;border:1px solid rgba(0,191,255,0.04)}
+  label{display:block;margin-top:8px;color:var(--muted);font-size:14px}
+  input[type=text], input[type=password], input[type=number], textarea{width:100%;padding:8px;border-radius:6px;background:#021426;border:1px solid rgba(0,191,255,0.06);color:var(--muted)}
+  .list{max-height:420px;overflow:auto}
+  .product{border-left:4px solid rgba(0,191,255,0.15);padding:10px;margin-bottom:8px;background:rgba(0,0,0,0.06)}
+  .price{color:var(--accent);font-weight:700}
+  .codearea{width:100%;height:260px;background:#001826;color:#dff;resize:vertical;padding:10px;border-radius:6px;border:1px solid rgba(0,191,255,0.06)}
+  .small{font-size:13px;color:#aee}
+  .muted{color:#99cfe6}
+  .center{text-align:center}
+</style>
+</head>
+<body>
+<header>
+  <h1>HackShop – admin felület</h1>
+  <div class="small">Csak a megadott admin léphet be: felhasználó <strong>Gyurix_12</strong></div>
+</header>
+
+<div class="wrap" id="app">
+  <!-- Login -->
+  <div id="loginCard" class="card">
+    <h2>Belépés</h2>
+    <label>Felhasználónév</label>
+    <input id="username" type="text" placeholder="Felhasználónév" value="">
+    <label>Jelszó</label>
+    <input id="password" type="password" placeholder="Jelszó">
+    <div style="margin-top:12px">
+      <button onclick="doLogin()">Belépés</button>
+      <span class="muted" style="margin-left:12px">Ha elfelejted: <em>Gyurix_12 / sargavirag1+</em></span>
+    </div>
+    <p id="loginMsg" class="small muted"></p>
+  </div>
+
+  <!-- Main app -->
+  <div id="mainUI" style="display:none">
+    <nav>
+      <button onclick="show('dashboard')">Kezdőlap</button>
+      <button onclick="show('market')">Vásárlás</button>
+      <button onclick="show('add')">Új termék</button>
+      <button onclick="show('codes')">Kódszoba</button>
+      <button onclick="logout()">Kijelentkezés</button>
+    </nav>
+
+    <div class="grid">
+      <div>
+        <section id="dashboard" class="card">
+          <h3>Admin dashboard</h3>
+          <p class="small">Összes termék: <span id="count">0</span> — Elérhető egyenleg: <span id="balance">100</span> EUR</p>
+          <div style="margin-top:12px">
+            <h4>Termékek</h4>
+            <div id="productsList" class="list"></div>
+          </div>
+        </section>
+
+        <section id="market" class="card" style="display:none">
+          <h3>Publikus vásárlói nézet</h3>
+          <div id="publicList"></div>
+        </section>
+
+        <section id="add" class="card" style="display:none">
+          <h3>Új termék hozzáadása</h3>
+          <label>Név</label><input id="pname" type="text">
+          <label>Leírás</label><textarea id="pdesc" rows="4"></textarea>
+          <label>Ár (EUR)</label><input id="pprice" type="number" step="0.01">
+          <div style="margin-top:10px"><button onclick="addProduct()">Hozzáadás</button></div>
+        </section>
+
+        <section id="codes" class="card" style="display:none">
+          <h3>Kódszoba (saját jegyzetek / kódok)</h3>
+          <div class="small muted">Ide írhatod a saját kódodat. Mentés a böngészőben (localStorage).</div>
+          <label>Cím</label><input id="codeTitle" type="text" placeholder="Pl. myscript.py">
+          <label>Kód</label><textarea id="codeText" class="codearea" placeholder="// Írd ide a kódot"></textarea>
+          <div style="margin-top:8px">
+            <button onclick="saveCode()">Mentés</button>
+            <button onclick="loadCode()">Betöltés</button>
+            <button onclick="deleteCode()">Törlés</button>
+          </div>
+          <h4>Mentett kódok</h4>
+          <div id="codesList" class="list"></div>
+        </section>
+      </div>
+
+      <aside>
+        <div class="card center">
+          <h3>Admin vezérlő</h3>
+          <div class="small muted">Bejelentkezve mint: <strong id="who">-</strong></div>
+          <div style="margin-top:12px">
+            <button onclick="exportData()">Adatok exportálása</button>
+            <button onclick="importSample()">Minta import</button>
+          </div>
+        </div>
+
+        <div class="card">
+          <h4>Pénzügy</h4>
+          <p class="small">Egyenleg: <strong id="sideBalance">100</strong> EUR</p>
+          <label>Feltöltés (EUR)</label>
+          <input id="addFunds" type="number" placeholder="Pl. 50">
+          <button onclick="addFunds()">Feltöltés</button>
+        </div>
+
+        <div class="card">
+          <h4>Publikus link</h4>
+          <p class="small muted">Miután feltöltöd ezt az index.html fájlt a tárhelyedre (GitHub Pages / Netlify / 000webhost), ez az oldal elérhető lesz a publikus URL-en.</p>
+        </div>
+      </aside>
+    </div>
+  </div>
+</div>
+
+<a class="toplink" href="#top" id="topBtn">⬆ Vissza a tetejére</a>
+
+<script>
+const ADMIN_USER = "Gyurix_12";
+const ADMIN_PASS = "sargavirag1+";
+
+function doLogin(){
+  const u = document.getElementById('username').value.trim();
+  const p = document.getElementById('password').value;
+  const msg = document.getElementById('loginMsg');
+  if(u===ADMIN_USER && p===ADMIN_PASS){
+    sessionStorage.setItem('hacshop_admin','true');
+    sessionStorage.setItem('hacshop_user', u);
+    msg.textContent = 'Sikeres belépés';
+    initApp();
+  }else{
+    msg.textContent = 'Hibás felhasználónév vagy jelszó';
+    msg.style.color='salmon';
+  }
+}
+
+function logout(){
+  sessionStorage.removeItem('hacshop_admin');
+  sessionStorage.removeItem('hacshop_user');
+  location.reload();
+}
+
+function initApp(){
+  document.getElementById('loginCard').style.display='none';
+  document.getElementById('mainUI').style.display='block';
+  document.getElementById('who').textContent = sessionStorage.getItem('hacshop_user')||'Gyurix_12';
+  loadState();
+  show('dashboard');
+  renderProducts();
+  renderPublic();
+}
+
+function loadState(){
+  const raw = localStorage.getItem('hacshop_data');
+  if(raw){
+    try{
+      const obj = JSON.parse(raw);
+      window.hacshop = obj;
+    }catch(e){
+      window.hacshop = {products:[],balance:100,codes:[]};
+    }
+  }else{
+    window.hacshop = {products:[],balance:100,codes:[]};
+  }
+  document.getElementById('balance').textContent = window.hacshop.balance.toFixed(2);
+  document.getElementById('sideBalance').textContent = window.hacshop.balance.toFixed(2);
+  document.getElementById('count').textContent = window.hacshop.products.length;
+}
+
+function saveState(){
+  localStorage.setItem('hacshop_data', JSON.stringify(window.hacshop));
+  document.getElementById('balance').textContent = window.hacshop.balance.toFixed(2);
+  document.getElementById('sideBalance').textContent = window.hacshop.balance.toFixed(2);
+  document.getElementById('count').textContent = window.hacshop.products.length;
+  renderProducts();
+  renderPublic();
+}
+
+function renderProducts(){
+  const el = document.getElementById('productsList');
+  el.innerHTML = '';
+  window.hacshop.products.forEach((p,i)=>{
+    const d = document.createElement('div');
+    d.className='product';
+    d.innerHTML = `<strong>${p.name}</strong><div class="small">${p.desc}</div><div class="price">${parseFloat(p.price).toFixed(2)} EUR</div>
+      <div style="margin-top:8px">
+        <button onclick="editProduct(${i})">Szerkeszt</button>
+        <button onclick="deleteProduct(${i})">Töröl</button>
+      </div>`;
+    el.appendChild(d);
+  });
+}
+
+function renderPublic(){
+  const el = document.getElementById('publicList');
+  el.innerHTML = '';
+  window.hacshop.products.forEach((p,i)=>{
+    const d = document.createElement('div');
+    d.className='product';
+    d.innerHTML = `<strong>${p.name}</strong><div class="small">${p.desc}</div><div class="price">${parseFloat(p.price).toFixed(2)} EUR</div>
+      <div style="margin-top:8px"><button onclick="buyPublic(${i})">Vásárlás (nem von valódi pénzt, csak demó)</button></div>`;
+    el.appendChild(d);
+  });
+}
+
+function addProduct(){
+  const name = document.getElementById('pname').value.trim();
+  const desc = document.getElementById('pdesc').value.trim();
+  const price = parseFloat(document.getElementById('pprice').value);
+  if(!name || isNaN(price)){ alert('Töltsd ki a nevet és az árat'); return; }
+  window.hacshop.products.push({name,desc,price});
+  saveState();
+  document.getElementById('pname').value='';document.getElementById('pdesc').value='';document.getElementById('pprice').value='';
+  alert('Termék hozzáadva');
+}
+
+function editProduct(i){
+  const p = window.hacshop.products[i];
+  const newName = prompt('Új név', p.name);
+  if(newName===null) return;
+  const newDesc = prompt('Új leírás', p.desc);
+  const newPrice = prompt('Új ár (EUR)', p.price);
+  if(newName) p.name=newName; if(newDesc) p.desc=newDesc; if(newPrice && !isNaN(parseFloat(newPrice))) p.price=parseFloat(newPrice);
+  saveState();
+}
+
+function deleteProduct(i){
+  if(confirm('Törölni akarod ezt a terméket?')){ window.hacshop.products.splice(i,1); saveState(); }
+}
+
+function buyPublic(i){
+  const p = window.hacshop.products[i];
+  if(window.hacshop.balance >= p.price){ window.hacshop.balance -= p.price; saveState(); alert('Sikeres vásárlás: '+p.name); }
+  else alert('Nincs elég egyenleg!');
+}
+
+// Codes (kódszoba)
+function saveCode(){
+  const title = document.getElementById('codeTitle').value.trim();
+  const text = document.getElementById('codeText').value;
+  if(!title){ alert('Adj címet a kódnak'); return; }
+  window.hacshop.codes = window.hacshop.codes || [];
+  window.hacshop.codes.push({title,code:text,ts:Date.now()});
+  saveState();
+  renderCodes();
+  alert('Kód mentve');
+}
+
+function renderCodes(){
+  const el = document.getElementById('codesList');
+  el.innerHTML = '';
+  (window.hacshop.codes||[]).forEach((c,i)=>{
+    const div=document.createElement('div'); div.className='product';
+    div.innerHTML=`<strong>${c.title}</strong><div class="small">Mentve: ${new Date(c.ts).toLocaleString()}</div>
+      <div style="margin-top:8px"><button onclick="loadCodeIndex(${i})">Megnyit</button><button onclick="deleteCodeIndex(${i})">Töröl</button></div>`;
+    el.appendChild(div);
+  });
+}
+
+function loadCodeIndex(i){
+  const c = window.hacshop.codes[i];
+  document.getElementById('codeTitle').value = c.title;
+  document.getElementById('codeText').value = c.code;
+}
+
+function deleteCodeIndex(i){
+  if(confirm('Törölni?')){ window.hacshop.codes.splice(i,1); saveState(); renderCodes(); }
+}
+
+function loadCode(){ renderCodes(); alert('Kódok betöltve a listába'); }
+function deleteCode(){ const t = document.getElementById('codeTitle').value; if(!t){ alert('Add meg a címet'); return;} window.hacshop.codes = (window.hacshop.codes||[]).filter(c=>c.title!==t); saveState(); renderCodes(); alert('Törölve'); }
+
+function addFunds(){ const v=parseFloat(document.getElementById('addFunds').value); if(isNaN(v)) return alert('Adj meg számot'); window.hacshop.balance += v; saveState(); alert('Feltöltve'); }
+
+function exportData(){
+  const a=document.createElement('a'); a.href='data:application/json;charset=utf-8,'+encodeURIComponent(JSON.stringify(window.hacshop)); a.download='hacshop_data.json'; a.click();
+}
+
+function importSample(){
+  if(confirm('Hozzáadni 2 minta terméket?')){ window.hacshop.products.push({name:'WiFi tananyag',desc:'Alap',price:19.99}); window.hacshop.products.push({name:'Caesar csomag',desc:'JS sablon',price:9.99}); saveState(); alert('Importálva'); }
+}
+
+// On load: if session exists, init
+window.addEventListener('load', ()=>{
+  if(sessionStorage.getItem('hacshop_admin')==='true'){ initApp(); }
+  else{
+    document.getElementById('loginCard').style.display='block';
+  }
+});
+</script>
+</body>
+</html>
